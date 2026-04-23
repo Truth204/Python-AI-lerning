@@ -1,6 +1,7 @@
 # =============================
 # SELF-LEARNING AI PROJECT
-# Q-Learning + UI + Graphs + Save System
+# Q-Learning + UI + Graphs + Save Systems
+# To run Install pip install matplotlib then Run
 # =============================
 
 import numpy as np
@@ -12,10 +13,10 @@ import matplotlib.pyplot as plt
 # =============================
 # CONFIG
 # =============================
-GRID_SIZE = 5
+GRID_SIZE = 6
 ACTIONS = ["up", "down", "left", "right"]
 START = (0, 0)
-GOAL = (4, 4)
+GOAL = (5, 5)
 
 alpha = 0.1
 gamma = 0.9
