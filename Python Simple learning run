@@ -1,0 +1,61 @@
+import numpy as np
+import random
+
+GRID_SIZE = 4
+ACTIONS = ["up", "down", "left", "right"]
+
+alpha = 0.1     # learning rate
+gamma = 0.9     # discount factor
+epsilon = 0.2   # exploration rate
+episodes = 500
+
+Q = {}
+
+def get_state(pos):
+    return pos
+
+def init_state(state):
+    if state not in Q:
+        Q[state] = {a: 0 for a in ACTIONS}
+
+def choose_action(state):
+    if random.uniform(0, 1) < epsilon:
+        return random.choice(ACTIONS) 
+    return max(Q[state], key=Q[state].get) 
+
+def move(pos, action):
+    x, y = pos
+    if action == "up": x = max(0, x - 1)
+    elif action == "down": x = min(GRID_SIZE - 1, x + 1)
+    elif action == "left": y = max(0, y - 1)
+    elif action == "right": y = min(GRID_SIZE - 1, y + 1)
+    return (x, y)
+
+def get_reward(pos):
+    return 10 if pos == (3, 3) else -1
+
+for episode in range(episodes):
+    state = get_state((0, 0))
+    init_state(state)
+
+    while state != (3, 3):
+        action = choose_action(state)
+        next_state = move(state, action)
+        init_state(next_state)
+
+        reward = get_reward(next_state)
+      
+        best_next = max(Q[next_state].values())
+        Q[state][action] += alpha * (reward + gamma * best_next - Q[state][action])
+
+        state = next_state
+
+state = (0, 0)
+path = [state]
+
+while state != (3, 3):
+    action = max(Q[state], key=Q[state].get)
+    state = move(state, action)
+    path.append(state)
+
+print("Learned Path:", path)
