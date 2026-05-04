@@ -1,13 +1,11 @@
 # =============================
-# SELF-LEARNING AI PROJECT
-# Q-Learning + UI + Graphs + Save Systems
-# To run Install pip install matplotlib then Run
+# SELF-LEARNING AI (NO UI)
+# Q-Learning + Graphs + Save
 # =============================
 
 import numpy as np
 import random
 import pickle
-import tkinter as tk
 import matplotlib.pyplot as plt
 
 # =============================
@@ -52,7 +50,7 @@ def get_reward(pos):
 # TRAINING
 # =============================
 def train(episodes=500):
-    global rewards_per_episode
+    global rewards_per_episode, epsilon
     rewards_per_episode = []
 
     for episode in range(episodes):
@@ -60,7 +58,11 @@ def train(episodes=500):
         init_state(state)
         total_reward = 0
 
-        while state != GOAL:
+        # epsilon decay
+        epsilon = max(0.01, epsilon * 0.995)
+
+        steps = 0
+        while state != GOAL and steps < 100:
             action = choose_action(state)
             next_state = move(state, action)
             init_state(next_state)
@@ -72,6 +74,7 @@ def train(episodes=500):
             Q[state][action] += alpha * (reward + gamma * best_next - Q[state][action])
 
             state = next_state
+            steps += 1
 
         rewards_per_episode.append(total_reward)
 
@@ -95,24 +98,40 @@ def load_model():
         print("No saved model found.")
 
 # =============================
-# VISUALIZATION (GRAPH)
+# GRAPH
 # =============================
 def plot_rewards():
     plt.figure()
-    plt.plot(rewards_per_episode)
+
+    # raw rewards
+    plt.plot(rewards_per_episode, alpha=0.3, label="Raw")
+
+    # moving average
+    if len(rewards_per_episode) >= 20:
+        avg = np.convolve(rewards_per_episode, np.ones(20)/20, mode='valid')
+        plt.plot(avg, label="Moving Avg (20)")
+
     plt.title("Training Performance")
     plt.xlabel("Episode")
     plt.ylabel("Total Reward")
+    plt.legend()
     plt.show()
 
 # =============================
-# TEST AGENT (GET PATH)
+# GET PATH
 # =============================
-def get_path():
+def get_path(max_steps=50):
     state = START
     path = [state]
 
-    while state != GOAL:
+    for _ in range(max_steps):
+        if state == GOAL:
+            break
+
+        if state not in Q:
+            print("Agent not trained enough.")
+            break
+
         action = max(Q[state], key=Q[state].get)
         state = move(state, action)
         path.append(state)
@@ -120,63 +139,62 @@ def get_path():
     return path
 
 # =============================
-# UI (TKINTER)
+# PRINT GRID PATH
 # =============================
-class App:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Self-Learning AI")
+def print_grid(path):
+    grid = [["." for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)]
 
-        self.canvas = tk.Canvas(root, width=400, height=400)
-        self.canvas.pack()
+    for (i, j) in path:
+        grid[i][j] = "*"
 
-        tk.Button(root, text="Train", command=self.train_ai).pack()
-        tk.Button(root, text="Show Path", command=self.show_path).pack()
-        tk.Button(root, text="Plot Graph", command=plot_rewards).pack()
-        tk.Button(root, text="Save", command=save_model).pack()
-        tk.Button(root, text="Load", command=load_model).pack()
+    sx, sy = START
+    gx, gy = GOAL
+    grid[sx][sy] = "S"
+    grid[gx][gy] = "G"
 
-        self.draw_grid()
-
-    def draw_grid(self):
-        self.canvas.delete("all")
-        cell_size = 400 // GRID_SIZE
-
-        for i in range(GRID_SIZE):
-            for j in range(GRID_SIZE):
-                x1 = j * cell_size
-                y1 = i * cell_size
-                x2 = x1 + cell_size
-                y2 = y1 + cell_size
-
-                color = "white"
-                if (i, j) == START:
-                    color = "green"
-                elif (i, j) == GOAL:
-                    color = "red"
-
-                self.canvas.create_rectangle(x1, y1, x2, y2, fill=color)
-
-    def train_ai(self):
-        train(500)
-
-    def show_path(self):
-        path = get_path()
-        self.draw_grid()
-
-        cell_size = 400 // GRID_SIZE
-
-        for (i, j) in path:
-            x1 = j * cell_size
-            y1 = i * cell_size
-            x2 = x1 + cell_size
-            y2 = y1 + cell_size
-            self.canvas.create_rectangle(x1, y1, x2, y2, fill="blue")
+    for row in grid:
+        print(" ".join(row))
 
 # =============================
-# RUN APP
+# MAIN MENU
+# =============================
+def main():
+    while True:
+        print("\n==== SELF-LEARNING AI ====")
+        print("1. Train AI")
+        print("2. Show Learned Path")
+        print("3. Plot Training Graph")
+        print("4. Save Model")
+        print("5. Load Model")
+        print("6. Exit")
+
+        choice = input("Select option: ")
+
+        if choice == "1":
+            train(500)
+
+        elif choice == "2":
+            path = get_path()
+            print("\nLearned Path:")
+            print_grid(path)
+
+        elif choice == "3":
+            plot_rewards()
+
+        elif choice == "4":
+            save_model()
+
+        elif choice == "5":
+            load_model()
+
+        elif choice == "6":
+            break
+
+        else:
+            print("Invalid choice.")
+
+# =============================
+# RUN
 # =============================
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = App(root)
-    root.mainloop()
+    main()
